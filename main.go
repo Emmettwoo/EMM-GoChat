@@ -16,6 +16,9 @@ func main() {
 	// 登入接口 监听
 	http.HandleFunc("/user/login", userLogin)
 
+	// 当前目录下的静态资源访问支持
+	http.Handle("/", http.FileServer(http.Dir(".")))
+
 	// 启动Web服务器
 	http.ListenAndServe(":8080", nil)
 }
