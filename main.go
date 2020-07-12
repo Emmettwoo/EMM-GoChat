@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"html/template"
 	"log"
 	"net/http"
 )
@@ -13,18 +14,19 @@ type ResponseBody struct {
 }
 
 func main() {
+	// 当前目录下的静态资源访问支持
+	http.Handle("/asset/", http.FileServer(http.Dir(".")))
+	registerView()
+
 	// 登入接口 监听
 	http.HandleFunc("/user/login", userLogin)
-
-	// 当前目录下的静态资源访问支持
-	http.Handle("/", http.FileServer(http.Dir(".")))
 
 	// 启动Web服务器
 	http.ListenAndServe(":8080", nil)
 }
 
 // 登入接口 实现
-func userLogin (writer http.ResponseWriter, request *http.Request) {
+func userLogin(writer http.ResponseWriter, request *http.Request) {
 	// 获取用户名密码
 	request.ParseForm()
 	username := request.PostForm.Get("username")
@@ -45,6 +47,20 @@ func userLogin (writer http.ResponseWriter, request *http.Request) {
 		ResponseSend(writer, 0, data, "登入成功")
 	} else {
 		ResponseSend(writer, -1, nil, "账号或密码错误")
+	}
+}
+
+func registerView() {
+	// 解析网页文件
+	htmlFiles, err := template.ParseGlob("view/**/*")
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, htmlFile := range htmlFiles.Templates() {
+		htmlName := htmlFile.Name()
+		http.HandleFunc(htmlName, func(writer http.ResponseWriter, request *http.Request) {
+			htmlFile.ExecuteTemplate(writer, htmlName, nil)
+		})
 	}
 }
 
